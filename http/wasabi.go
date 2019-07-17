@@ -31,6 +31,7 @@ func (h *WasabiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.s3service.CreateBucket(hostname)
 	h.iamservice.CreateUser(hostname)
+	h.iamservice.CreateSingleUserBucketPolicy(hostname)
 
 	w.WriteHeader(http.StatusCreated)
 }
