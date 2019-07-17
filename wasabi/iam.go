@@ -39,8 +39,34 @@ func (i *IAMService) CreateUser(name string) *iam.User {
 	return res.User
 }
 
-// CreateSingleUserBucketPolicy creates a new policy with permissions scoped to a single bucket
-func (i *IAMService) CreateSingleUserBucketPolicy(bucket string) {
+// CreateAccessKeyForUser creates an access key for the given user name
+func (i *IAMService) CreateAccessKeyForUser(name string) *iam.AccessKey {
+	result, err := i.iam.CreateAccessKey(&iam.CreateAccessKeyInput{
+		UserName: aws.String(name),
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			log.Println("CreateAccessKeyError", aerr.Error())
+		}
+	}
+
+	return result.AccessKey
+}
+
+// CreateLimitedAccessBucketPolicy creates a new policy with permissions scoped to a single bucket
+func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) {
+	type statemententry struct {
+		Effect   string
+		Action   []string
+		Resource []string
+	}
+
+	type policydocument struct {
+		Version   string
+		Statement []statemententry
+	}
+
 	policy := policydocument{
 		Version: "2012-10-17",
 		Statement: []statemententry{
@@ -90,13 +116,46 @@ func (i *IAMService) CreateSingleUserBucketPolicy(bucket string) {
 	}
 }
 
-type policydocument struct {
-	Version   string
-	Statement []statemententry
-}
-
-type statemententry struct {
-	Effect   string
-	Action   []string
-	Resource []string
-}
+// policy := struct {
+// 	Version   string
+// 	Statement []struct{
+// 		Effect   string
+// 		Action   []string
+// 		Resource []string
+// 	}
+// }{
+// 	Version:   "2012-10-17",
+// 	Statement:[]struct{
+// 		Effect   string
+// 		Action   []string
+// 		Resource []string
+// 	}{
+// 		{
+// 			Effect: "Allow",
+// 			Action: []string{
+// 				"s3:DeleteObject",
+// 				"s3:GetObject",
+// 				"s3:HeadBucket",
+// 				"s3:ListObjects",
+// 				"s3:PutObject",
+// 				"s3:ListBucket",
+// 				"s3:GetBucketLocation",
+// 				"s3:ListBucketMultipartUploads",
+// 			},
+// 			Resource: []string{
+// 				"arn:aws:s3:::" + bucket,
+// 				"arn:aws:s3:::" + bucket + "/*",
+// 			},
+// 		},
+// 		{
+// 			Effect: "Allow",
+// 			Action: []string{
+// 				"s3:*",
+// 			},
+// 			Resource: []string{
+// 				"arn:aws:s3:::" + bucket,
+// 				"arn:aws:s3:::" + bucket + "/*",
+// 			},
+// 		},
+// 	},
+// }
