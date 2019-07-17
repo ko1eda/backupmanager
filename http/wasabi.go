@@ -29,11 +29,13 @@ func (h *WasabiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.iamservice.CreateUser(hostname)
-	_ = h.iamservice.CreateAccessKeyForUser(hostname)
+	user := h.iamservice.CreateUser(hostname)
+	_ = h.iamservice.CreateAccessKeyForUser(user)
 
 	h.s3service.CreateBucket(hostname)
-	h.iamservice.CreateLimitedAccessBucketPolicy(hostname)
+	policy := h.iamservice.CreateLimitedAccessBucketPolicy(hostname)
+
+	h.iamservice.AttachPolicyToUser(policy, user)
 
 	// convert key.AccessKeyId and key.SecretAccessKey to json
 	// return response json
