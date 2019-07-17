@@ -8,13 +8,14 @@ import (
 
 // WasabiHandler handles http requests to S3
 type WasabiHandler struct {
-	s3service *wasabi.S3Service
+	s3service  *wasabi.S3Service
+	iamservice *wasabi.IAMService
 	// hasher *Hasher
 }
 
 // NewWasabiHandler returns a new handler
-func NewWasabiHandler(s *wasabi.S3Service) *WasabiHandler {
-	return &WasabiHandler{s}
+func NewWasabiHandler(s3s *wasabi.S3Service, iam *wasabi.IAMService) *WasabiHandler {
+	return &WasabiHandler{s3s, iam}
 }
 
 func (h *WasabiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +30,7 @@ func (h *WasabiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.s3service.CreateBucket(hostname)
+	h.iamservice.CreateUser(hostname)
 
 	w.WriteHeader(http.StatusCreated)
 }

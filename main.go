@@ -39,18 +39,23 @@ func main() {
 			os.Getenv("WASABI_SECRET_ACCESS_KEY"),
 			"",
 		),
-		Endpoint: aws.String(os.Getenv("WASABI_ENDPOINT")),
-		Region:   aws.String(os.Getenv("WASABI_REGION")),
+		Region: aws.String(os.Getenv("WASABI_REGION")),
 	}
 
 	s := session.New(config)
 
 	s3Client := wasabi.NewS3Service(s, &aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
+		Endpoint:         aws.String(os.Getenv("WASABI_S3_ENDPOINT")),
+	})
+
+	iamClient := wasabi.NewIAMService(s, &aws.Config{
+		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
 	log.Println("Listening on port 8080...")
 
-	http.Handle("/", bhttp.NewWasabiHandler(s3Client))
+	http.Handle("/", bhttp.NewWasabiHandler(s3Client, iamClient))
+
 	http.ListenAndServe(":8080", nil)
 }

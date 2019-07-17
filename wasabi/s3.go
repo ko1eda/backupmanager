@@ -11,13 +11,13 @@ import (
 
 // S3Service represents a wrapped s3 object
 type S3Service struct {
-	*s3.S3
+	s3 *s3.S3
 }
 
 // NewS3Service returns a newly configured s3 service
-func NewS3Service(sess *session.Session, config *aws.Config) *S3Service {
+func NewS3Service(sess *session.Session, configs ...*aws.Config) *S3Service {
 	return &S3Service{
-		s3.New(sess, config),
+		s3.New(sess, configs...),
 	}
 
 	// s3Client := wasabi.NewS3Service(newSession, &aws.Config{
@@ -53,7 +53,7 @@ func NewS3Service(sess *session.Session, config *aws.Config) *S3Service {
 // CreateBucket returns a newly configured s3 service
 func (s3s *S3Service) CreateBucket(name string) {
 
-	_, err := s3s.S3.CreateBucket(&s3.CreateBucketInput{Bucket: &name})
+	_, err := s3s.s3.CreateBucket(&s3.CreateBucketInput{Bucket: &name})
 
 	// TODO switch this because wasabi doesn't seem to log bucket exists error
 	if err != nil {
