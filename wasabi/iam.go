@@ -8,11 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
 // IAMService represents an IAM user
 type IAMService struct {
-	iam *iam.IAM
+	iam iamiface.IAMAPI
 }
 
 // NewIAMService returns a newly configured s3 service
@@ -22,18 +23,18 @@ func NewIAMService(sess *session.Session, configs ...*aws.Config) *IAMService {
 	}
 }
 
-// CreateUser creates a new IAM user
+// CreateUser creates a new IAM user if it does not already exist for the given name
+// All users created through this application will have a prefix of /ops/
 func (i *IAMService) CreateUser(name string) *iam.User {
-	res, err := i.iam.CreateUser(&iam.CreateUserInput{UserName: &name})
+	if res, err := i.iam.GetUser(&iam.GetUserInput{UserName: &name}); err == nil {
+		return res.User
+	}
 
+	res, err := i.iam.CreateUser(&iam.CreateUserInput{UserName: aws.String(name), Path: aws.String("/ops/")})
+
+	// return error
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			log.Println("Called from Iam service create user")
-			log.Println(aerr.Code())
-			log.Println(aerr.Error())
-			// log.Println(aerr.OrigErr())
-			// log.Fatal(aerr.Message())
-		}
+		log.Println("CreateUserError", err)
 	}
 
 	return res.User
@@ -45,6 +46,7 @@ func (i *IAMService) CreateAccessKeyForUser(u *iam.User) *iam.AccessKey {
 		UserName: u.UserName,
 	})
 
+	// return error
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			log.Println("CreateAccessKeyError", aerr.Error())
@@ -55,7 +57,18 @@ func (i *IAMService) CreateAccessKeyForUser(u *iam.User) *iam.AccessKey {
 }
 
 // CreateLimitedAccessBucketPolicy creates a new policy with permissions scoped to a single bucket
+// First we do a check to ensure that the policy exists, and if it does we return that.
+// All policies created through this application have a path prefix of /opts/
 func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) *iam.Policy {
+	// If the policy already exists return that
+	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String("/ops/")}); err == nil {
+		for _, pol := range res.Policies {
+			if *pol.PolicyName == bucket+"-limited-access-policy" {
+				return pol
+			}
+		}
+	}
+
 	type statemententry struct {
 		Effect   string
 		Action   []string
@@ -104,6 +117,7 @@ func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) *iam.Policy 
 	res, err := i.iam.CreatePolicy(&iam.CreatePolicyInput{
 		PolicyDocument: aws.String(string(json)),
 		PolicyName:     aws.String(bucket + "-limited-access-policy"),
+		Path:           aws.String("/ops/"),
 	})
 
 	if err != nil {
