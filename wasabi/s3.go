@@ -23,7 +23,7 @@ func NewS3Service(sess *session.Session, configs ...*aws.Config) *S3Service {
 
 // CreateBucket returns a newly configured s3 service
 func (s3s *S3Service) CreateBucket(name string) {
-	res, err := s3s.s3.CreateBucket(&s3.CreateBucketInput{Bucket: &name})
+	_, err := s3s.s3.CreateBucket(&s3.CreateBucketInput{Bucket: &name})
 
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeBucketAlreadyExists {
@@ -34,8 +34,6 @@ func (s3s *S3Service) CreateBucket(name string) {
 
 		log.Println("CreateBucketError", err)
 	}
-
-	log.Println(*res.Location)
 
 	// TODO switch this because wasabi doesn't seem to log bucket exists error
 	// if err != nil {

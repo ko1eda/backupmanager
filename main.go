@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
-	"net/http"
 	"os"
+	"os/signal"
 
 	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/joho/godotenv"
-	bhttp "github.com/ko1eda/backupmanager/http"
+	"github.com/ko1eda/backupmanager/http"
+	"github.com/ko1eda/backupmanager/log"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -22,15 +22,14 @@ func main() {
 	// create new S3 bucket
 	// create new IAM Policy
 	// return credentials to user
+	logger, closefn := log.New()
+	defer closefn()
 
 	// process env variables
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		logger.Log("Error loading .env file")
+		os.Exit(1)
 	}
-
-	// load config from env
-	// bucket := aws.String("test1.securedatatransit.com")
-	// key := aws.String("wasabi-testobject")
 
 	// create base s3 config
 	config := &aws.Config{
@@ -53,9 +52,17 @@ func main() {
 		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
-	log.Println("Listening on port 8080...")
+	srvr := http.NewServer("8080", s3Client, iamClient, logger)
+	srvr.Open()
+	defer srvr.Close()
 
-	http.Handle("/", bhttp.NewWasabiHandler(s3Client, iamClient))
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 
-	http.ListenAndServe(":8080", nil)
+	// log.Println("Listening on port 8080...")
+
+	// http.Handle("/", bhttp.NewWasabiHandler(s3Client, iamClient))
+
+	// http.ListenAndServe(":8080", nil)
 }
