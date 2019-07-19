@@ -1,11 +1,10 @@
 package http
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"net/http"
 
-	"github.com/ko1eda/backupmanager/log"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -13,27 +12,38 @@ import (
 type Server struct {
 	S3Service  *wasabi.S3Service
 	IAMService *wasabi.IAMService
-	Logger     *log.Logger
 	Router     *http.ServeMux
-	Address    string
 	listener   net.Listener
+	Address    string
 	// Hasrer
 }
 
 // NewServer returns a new sever instance
-func NewServer(addr string, s3s *wasabi.S3Service, iam *wasabi.IAMService, logger *log.Logger) *Server {
-	return &Server{
-		S3Service:  s3s,
+func NewServer(s3 *wasabi.S3Service, iam *wasabi.IAMService, opts ...func(*Server)) *Server {
+	s := &Server{
+		S3Service:  s3,
 		IAMService: iam,
-		Logger:     logger,
-		Address:    addr,
+		Address:    ":8080",
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	return s
+}
+
+// WithAddress sets the listening address and port for the server
+func WithAddress(address string) func(*Server) {
+	return func(s *Server) {
+		s.Address = address
 	}
 }
 
 // Open opens the server and listens at the specifed address
 func (s *Server) Open() error {
 	// Open socket.
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", s.Address))
+	ln, err := net.Listen("tcp", s.Address)
 
 	if err != nil {
 		return err
@@ -41,10 +51,11 @@ func (s *Server) Open() error {
 
 	s.listener = ln
 
-	// Start HTTP server.
+	// Start HTTP server. Note this is non-blocking so
+	// we must block in the calling code
 	go func() { http.Serve(s.listener, s.router()) }()
 
-	s.Logger.Log("Server started listening on port " + s.Address + "....")
+	log.Println("Server started listening on port " + s.Address + "....")
 
 	return nil
 }
@@ -62,9 +73,9 @@ func (s *Server) Close() error {
 func (s *Server) router() http.Handler {
 	s.Router = http.NewServeMux()
 
-	wh := newWasabiHandler(s.S3Service, s.IAMService, s.Logger)
+	wh := newWasabiHandler(s.S3Service, s.IAMService)
 
-	s.Router.Handle("/cloud/backups/infrastructure/create", wh.handleCreateBackupInfrastructure())
+	s.Router.Handle("/backups/cloud/infrastructure/create", wh.handleCreateBackupInfrastructure())
 
 	return s.Router
 }

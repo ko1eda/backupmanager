@@ -2,7 +2,6 @@ package wasabi
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -25,46 +24,47 @@ func NewIAMService(sess *session.Session, configs ...*aws.Config) *IAMService {
 
 // CreateUser creates a new IAM user if it does not already exist for the given name
 // All users created through this application will have a prefix of /ops/
-func (i *IAMService) CreateUser(name string) *iam.User {
+func (i *IAMService) CreateUser(name string) (*iam.User, error) {
 	if res, err := i.iam.GetUser(&iam.GetUserInput{UserName: &name}); err == nil {
-		return res.User
+		return res.User, nil
 	}
 
 	res, err := i.iam.CreateUser(&iam.CreateUserInput{UserName: aws.String(name), Path: aws.String("/ops/")})
 
-	// return error
 	if err != nil {
-		log.Println("CreateUserError", err)
+		// if there is any error other than entity already exists we have a problem
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() != iam.ErrCodeEntityAlreadyExistsException {
+				return nil, aerr
+			}
+		}
 	}
 
-	return res.User
+	return res.User, nil
 }
 
 // CreateAccessKeyForUser creates an access key for the given user name
-func (i *IAMService) CreateAccessKeyForUser(u *iam.User) *iam.AccessKey {
+func (i *IAMService) CreateAccessKeyForUser(u *iam.User) (*iam.AccessKey, error) {
 	result, err := i.iam.CreateAccessKey(&iam.CreateAccessKeyInput{
 		UserName: u.UserName,
 	})
 
-	// return error
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			log.Println("CreateAccessKeyError", aerr.Error())
-		}
+		return nil, err
 	}
 
-	return result.AccessKey
+	return result.AccessKey, nil
 }
 
 // CreateLimitedAccessBucketPolicy creates a new policy with permissions scoped to a single bucket
 // First we do a check to ensure that the policy exists, and if it does we return that.
 // All policies created through this application have a path prefix of /opts/
-func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) *iam.Policy {
+func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) (*iam.Policy, error) {
 	// If the policy already exists return that
 	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String("/ops/")}); err == nil {
 		for _, pol := range res.Policies {
 			if *pol.PolicyName == bucket+"-limited-access-policy" {
-				return pol
+				return pol, nil
 			}
 		}
 	}
@@ -111,7 +111,7 @@ func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) *iam.Policy 
 	json, err := json.Marshal(policy)
 
 	if err != nil {
-		log.Fatal("unmarshall error", err)
+		return nil, err
 	}
 
 	res, err := i.iam.CreatePolicy(&iam.CreatePolicyInput{
@@ -121,64 +121,22 @@ func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) *iam.Policy 
 	})
 
 	if err != nil {
-		log.Fatal("Policy creation error", err)
+		return nil, err
 	}
 
-	return res.Policy
+	return res.Policy, nil
 }
 
 // AttachPolicyToUser attaches a policy to a given iam user
-func (i *IAMService) AttachPolicyToUser(p *iam.Policy, u *iam.User) {
+func (i *IAMService) AttachPolicyToUser(p *iam.Policy, u *iam.User) error {
 	_, err := i.iam.AttachUserPolicy(&iam.AttachUserPolicyInput{
 		PolicyArn: p.Arn,
 		UserName:  u.UserName,
 	})
 
 	if err != nil {
-		log.Fatal("AttachPolicyError", err)
+		return err
 	}
-}
 
-// policy := struct {
-// 	Version   string
-// 	Statement []struct{
-// 		Effect   string
-// 		Action   []string
-// 		Resource []string
-// 	}
-// }{
-// 	Version:   "2012-10-17",
-// 	Statement:[]struct{
-// 		Effect   string
-// 		Action   []string
-// 		Resource []string
-// 	}{
-// 		{
-// 			Effect: "Allow",
-// 			Action: []string{
-// 				"s3:DeleteObject",
-// 				"s3:GetObject",
-// 				"s3:HeadBucket",
-// 				"s3:ListObjects",
-// 				"s3:PutObject",
-// 				"s3:ListBucket",
-// 				"s3:GetBucketLocation",
-// 				"s3:ListBucketMultipartUploads",
-// 			},
-// 			Resource: []string{
-// 				"arn:aws:s3:::" + bucket,
-// 				"arn:aws:s3:::" + bucket + "/*",
-// 			},
-// 		},
-// 		{
-// 			Effect: "Allow",
-// 			Action: []string{
-// 				"s3:*",
-// 			},
-// 			Resource: []string{
-// 				"arn:aws:s3:::" + bucket,
-// 				"arn:aws:s3:::" + bucket + "/*",
-// 			},
-// 		},
-// 	},
-// }
+	return nil
+}

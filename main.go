@@ -1,8 +1,11 @@
 package main
 
 import (
+	"io"
+	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 
@@ -10,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/joho/godotenv"
 	"github.com/ko1eda/backupmanager/http"
-	"github.com/ko1eda/backupmanager/log"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -18,17 +20,22 @@ func main() {
 	// Parse incoming requsts
 	// Log all requests and errors
 	// Get hashed query parameter and decrpyt it
-	// create new IAM user
-	// create new S3 bucket
-	// create new IAM Policy
-	// return credentials to user
-	logger, closefn := log.New()
-	defer closefn()
+
+	// File to store logs
+	f, err := os.OpenFile(makePath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		log.Fatalf("FileOpenError: %v", err)
+	}
+
+	defer f.Close()
+
+	mw := io.MultiWriter(os.Stderr, f)
+	log.SetOutput(mw)
 
 	// process env variables
 	if err := godotenv.Load(); err != nil {
-		logger.Log("Error loading .env file")
-		os.Exit(1)
+		log.Fatal("ENVLoadError: ", err)
 	}
 
 	// create base s3 config
@@ -52,17 +59,27 @@ func main() {
 		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
-	srvr := http.NewServer("8080", s3Client, iamClient, logger)
+	srvr := http.NewServer(s3Client, iamClient)
 	srvr.Open()
 	defer srvr.Close()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
+}
 
-	// log.Println("Listening on port 8080...")
+// makePath makes a path to store log files on the current
+// working directory
+func makePath() string {
+	wd, err := os.Getwd()
 
-	// http.Handle("/", bhttp.NewWasabiHandler(s3Client, iamClient))
+	if err != nil {
+		log.Fatalf("GetWorkingDirError: %v", err)
+	}
 
-	// http.ListenAndServe(":8080", nil)
+	if err := os.MkdirAll(filepath.Join(wd, "storage", "logs"), 0770); err != nil {
+		log.Fatalf("CreateStorageDirError: %v", err)
+	}
+
+	return filepath.Join(wd, "storage", "logs", "application.log")
 }

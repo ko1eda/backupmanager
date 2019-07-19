@@ -1,10 +1,10 @@
 package http
 
 import (
-	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/ko1eda/backupmanager/log"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -12,83 +12,77 @@ import (
 type wasabiHandler struct {
 	s3service  *wasabi.S3Service
 	iamservice *wasabi.IAMService
-	logger     *log.Logger
+	//mailer
 	// hasher *Hasher
 }
 
 // NewWasabiHandler returns a new handler
-func newWasabiHandler(s3s *wasabi.S3Service, iam *wasabi.IAMService, logger *log.Logger) *wasabiHandler {
-	return &wasabiHandler{s3s, iam, logger}
+func newWasabiHandler(s3s *wasabi.S3Service, iam *wasabi.IAMService) *wasabiHandler {
+	return &wasabiHandler{s3s, iam}
 }
 
 func (h *wasabiHandler) handleCreateBackupInfrastructure() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-
-		hostname := params.Get("host")
-
-		// if there is no hosthname parameter
+		hostname := r.URL.Query().Get("host")
 		if hostname == "" {
+			// if there is no hostname parameter the req is malformed
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		user := h.iamservice.CreateUser(hostname)
-		key := h.iamservice.CreateAccessKeyForUser(user)
-
-		h.s3service.CreateBucket(hostname)
-		policy := h.iamservice.CreateLimitedAccessBucketPolicy(hostname)
-
-		h.iamservice.AttachPolicyToUser(policy, user)
-
-		// convert key.AccessKeyId and key.SecretAccessKey to json
-		// return response json
-		json, err := json.Marshal(&struct {
-			AccessKey       string
-			SecretAccessKey string
-		}{
-			*key.AccessKeyId,
-			*key.SecretAccessKey,
-		})
-
+		user, err := h.iamservice.CreateUser(hostname)
 		if err != nil {
-			h.logger.Log("AccessKeyMarshalError: ", err)
+			log.Println("CreateUserError: ", err)
+
+			// send email
+
+			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 
-		// str := fmt.Sprintf("%s:%s", *key.AccessKeyId, *key.SecretAccessKey)
+		key, err := h.iamservice.CreateAccessKeyForUser(user)
+		if err != nil {
+			log.Println("CreateKeyError ", err)
 
-		// // by writing anything to the reponse body we do not
-		// // need a writeheader as go automatically adds 200
-		// w.Write([]byte(str))
+			// send email
+
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+
+		bucket, err := h.s3service.CreateBucket(hostname)
+		if err != nil {
+			log.Println("CreateBucketError: ", err)
+
+			//send email
+
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+
+		policy, err := h.iamservice.CreateLimitedAccessBucketPolicy(bucket)
+		if err != nil {
+			log.Println("CreatePolicyError: ", err)
+
+			// send email
+
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+
+		err = h.iamservice.AttachPolicyToUser(policy, user)
+		if err != nil {
+			log.Println("AttachPolicyError: ", err)
+
+			// send email
+
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
 
 		// by writing anything to the reponse body we do not
 		// need a writeheader as go automatically adds 200
-		w.Write(json)
+		str := fmt.Sprintf("%s,%s", *key.AccessKeyId, *key.SecretAccessKey)
+		w.Write([]byte(str))
 	}
 }
-
-// func (h *wasabiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-// 	params := r.URL.Query()
-
-// 	hostname := params.Get("host")
-
-// 	// if there is no hosthname parameter
-// 	if hostname == "" {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	// user := h.iamservice.CreateUser(hostname)
-// 	// _ = h.iamservice.CreateAccessKeyForUser(user)
-
-// 	// h.s3service.CreateBucket(hostname)
-// 	// policy := h.iamservice.CreateLimitedAccessBucketPolicy(hostname)
-
-// 	// h.iamservice.AttachPolicyToUser(policy, user)
-
-// 	// convert key.AccessKeyId and key.SecretAccessKey to json
-// 	// return response json
-
-// 	w.WriteHeader(http.StatusCreated)
-// }
