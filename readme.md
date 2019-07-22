@@ -17,6 +17,8 @@ WASABI_REGION="us-east-1"
 + https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/common-examples.html
 ### Indiviual sdk docs
 + https://docs.aws.amazon.com/sdk-for-go/api/service/iam/#IAM.AttachUserPolicy 
+### aws iface interfaces and testing 
++ https://docs.aws.amazon.com/sdk-for-go/api/service/s3/s3iface/
 
 
 ## Building the logger

@@ -7,11 +7,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 )
 
 // S3Service represents a wrapped s3 object
 type S3Service struct {
-	s3 *s3.S3
+	s3 s3iface.S3API
 }
 
 // NewS3Service returns a newly configured s3 service
