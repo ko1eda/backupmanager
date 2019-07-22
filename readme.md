@@ -1,4 +1,18 @@
 ## Useful links
+### Setting up the project
+0. Make sure go runtime is installed on whatever machine you are using to build this project
+1. create a .env file (it should look like the block below but make sure to add keys)
+
+```
+WASABI_ACCESS_KEY_ID=
+WASABI_SECRET_ACCESS_KEY=
+WASABI_S3_ENDPOINT=https://s3.wasabisys.com
+WASABI_IAM_ENDPOINT=https://iam.wasabisys.com
+WASABI_REGION="us-east-1"
+```
+3. run go build from the root directory of this project
+
+
 ### SDK Code examples
 + https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/common-examples.html
 ### Indiviual sdk docs

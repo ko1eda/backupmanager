@@ -36,7 +36,7 @@ func NewServer(s3 *wasabi.S3Service, iam *wasabi.IAMService, opts ...func(*Serve
 // WithAddress sets the listening address and port for the server
 func WithAddress(address string) func(*Server) {
 	return func(s *Server) {
-		s.Address = address
+		s.Address = ":" + address
 	}
 }
 
@@ -55,7 +55,7 @@ func (s *Server) Open() error {
 	// we must block in the calling code
 	go func() { http.Serve(s.listener, s.router()) }()
 
-	log.Println("Server started listening on port " + s.Address + "....")
+	log.Println("Server started listening on port " + s.Address[1:] + "....")
 
 	return nil
 }

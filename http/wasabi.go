@@ -42,7 +42,7 @@ func (h *wasabiHandler) handleCreateBackupInfrastructure() http.HandlerFunc {
 
 		key, err := h.iamservice.CreateAccessKeyForUser(user)
 		if err != nil {
-			log.Println("CreateKeyError ", err)
+			log.Println("CreateKeyError: ", err)
 
 			// send email
 

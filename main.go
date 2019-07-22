@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"os"
@@ -20,9 +21,12 @@ func main() {
 	// Parse incoming requsts
 	// Log all requests and errors
 	// Get hashed query parameter and decrpyt it
+	port := flag.String("p", "8080", "Set the port the server will run on")
+	dir := flag.String("d", ".", "Set the directory where log files will be stored. Defaults to the current working directory")
+	flag.Parse()
 
 	// File to store logs
-	f, err := os.OpenFile(makePath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(makePath(*dir), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
 	if err != nil {
 		log.Fatalf("FileOpenError: %v", err)
@@ -30,6 +34,7 @@ func main() {
 
 	defer f.Close()
 
+	// log to stderr and file
 	mw := io.MultiWriter(os.Stderr, f)
 	log.SetOutput(mw)
 
@@ -59,7 +64,7 @@ func main() {
 		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
-	srvr := http.NewServer(s3Client, iamClient)
+	srvr := http.NewServer(s3Client, iamClient, http.WithAddress(*port))
 	srvr.Open()
 	defer srvr.Close()
 
@@ -68,18 +73,13 @@ func main() {
 	<-c
 }
 
-// makePath makes a path to store log files on the current
-// working directory
-func makePath() string {
-	wd, err := os.Getwd()
+// makePath makes a path to store log files
+func makePath(dir string) string {
+	dir = filepath.Clean(dir)
 
-	if err != nil {
-		log.Fatalf("GetWorkingDirError: %v", err)
-	}
-
-	if err := os.MkdirAll(filepath.Join(wd, "storage", "logs"), 0770); err != nil {
+	if err := os.MkdirAll(filepath.Join(dir, "storage", "logs"), 0770); err != nil {
 		log.Fatalf("CreateStorageDirError: %v", err)
 	}
 
-	return filepath.Join(wd, "storage", "logs", "application.log")
+	return filepath.Join(dir, "storage", "logs", "application.log")
 }

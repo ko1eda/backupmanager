@@ -1,7 +1,6 @@
 package wasabi
 
 import (
-	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -30,8 +29,6 @@ func (s3s *S3Service) CreateBucket(name string) (bucketname string, err error) {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() != s3.ErrCodeBucketAlreadyExists {
 			return "", err
 		}
-
-		log.Println("WARNING_BucketAlreadyExists")
 
 		return name, nil
 	}
