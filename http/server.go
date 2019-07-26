@@ -75,7 +75,7 @@ func (s *Server) router() http.Handler {
 
 	wh := newWasabiHandler(s.S3Service, s.IAMService)
 
-	s.Router.Handle("/backups/cloud/infrastructure/create", wh.handleCreateBackupInfrastructure())
+	s.Router.Handle("/cloud/infrastructure/create", wh.handleCreateBackupInfrastructure())
 
 	return s.Router
 }
