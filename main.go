@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/joho/godotenv"
 	"github.com/ko1eda/backupmanager/http"
+	"github.com/ko1eda/backupmanager/smtp"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -53,26 +54,47 @@ func main() {
 		Region: aws.String(os.Getenv("WASABI_REGION")),
 	}
 
+	// creates a new aws session (this is thread safe)
 	s := session.New(config)
 
+	// create a new s3 client
 	s3Client := wasabi.NewS3Service(s, &aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
 		Endpoint:         aws.String(os.Getenv("WASABI_S3_ENDPOINT")),
 	})
 
+	// create a new iam client
 	iamClient := wasabi.NewIAMService(s, &aws.Config{
 		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
+	// creates a mailer with credentials
+	mailer := smtp.NewMailer(os.Getenv("MAILER_HOSTNAME"), smtp.WithCredentials(
+		os.Getenv("MAILER_USERNAME"),
+		os.Getenv("MAILER_PASSWORD"),
+	))
+
+	err = mailer.Open()
+
+	if err != nil {
+		log.Fatal("MailServerConnectionError: ", err)
+	}
+
+	defer mailer.Close()
+
+	// set up the server with all dependencies
 	srvr := http.NewServer(http.WithAddress(*port))
 	srvr.IAMService = iamClient
 	srvr.S3Service = s3Client
+	srvr.Mailer = mailer
 
 	srvr.Open()
 	defer srvr.Close()
 
+	// we listen forever OR until we get a signal from the os
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	// signal.Notify(c, os.Interrupt)
+	signal.Notify(c)
 	<-c
 }
 

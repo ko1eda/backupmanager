@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/ko1eda/backupmanager/smtp"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -13,6 +14,7 @@ type Server struct {
 	listener   net.Listener
 	S3Service  *wasabi.S3Service
 	IAMService *wasabi.IAMService
+	Mailer     *smtp.Mailer
 	router     *http.ServeMux
 	address    string
 	// Hasrer
