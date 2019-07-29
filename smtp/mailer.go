@@ -51,7 +51,11 @@ func (m *Mailer) Open() error {
 	m.client = c
 
 	if m.auth != nil {
-		m.client.Auth(m.auth)
+		err := m.client.Auth(m.auth)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -60,11 +64,6 @@ func (m *Mailer) Open() error {
 // Close closes an open smtp connection
 func (m *Mailer) Close() error {
 	return m.client.Close()
-}
-
-// Hello test
-func (m *Mailer) Hello() error {
-	return m.client.Hello("test")
 }
 
 // Send sends an email body to an address from an address

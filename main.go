@@ -78,10 +78,6 @@ func main() {
 		log.Fatal("MailServerConnectionError: ", err)
 	}
 
-	if err := mailer.Hello(); err != nil {
-		log.Fatal("MailServerHelloError: ", err)
-	}
-
 	defer mailer.Close()
 
 	// set up the server with all dependencies
