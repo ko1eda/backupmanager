@@ -62,6 +62,11 @@ func (m *Mailer) Close() error {
 	return m.client.Close()
 }
 
+// Hello test
+func (m *Mailer) Hello() error {
+	return m.client.Hello("test")
+}
+
 // Send sends an email body to an address from an address
 func (m *Mailer) Send(to, from, body string) error {
 	if err := m.client.Mail(from); err != nil {
@@ -73,6 +78,7 @@ func (m *Mailer) Send(to, from, body string) error {
 	}
 
 	wc, err := m.client.Data()
+
 	if err != nil {
 		return err
 	}

@@ -74,10 +74,12 @@ func main() {
 		os.Getenv("MAILER_PASSWORD"),
 	))
 
-	err = mailer.Open()
-
-	if err != nil {
+	if err := mailer.Open(); err != nil {
 		log.Fatal("MailServerConnectionError: ", err)
+	}
+
+	if err := mailer.Hello(); err != nil {
+		log.Fatal("MailServerHelloError: ", err)
 	}
 
 	defer mailer.Close()
