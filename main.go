@@ -64,7 +64,10 @@ func main() {
 		Endpoint: aws.String(os.Getenv("WASABI_IAM_ENDPOINT")),
 	})
 
-	srvr := http.NewServer(s3Client, iamClient, http.WithAddress(*port))
+	srvr := http.NewServer(http.WithAddress(*port))
+	srvr.IAMService = iamClient
+	srvr.S3Service = s3Client
+
 	srvr.Open()
 	defer srvr.Close()
 
