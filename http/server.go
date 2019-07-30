@@ -18,7 +18,6 @@ type Server struct {
 	Mailer     *smtp.Mailer
 	Validator  *Validator
 	router     *http.ServeMux
-	// Hasrer
 }
 
 // NewServer returns a new sever instance
@@ -79,14 +78,3 @@ func (s *Server) Close() error {
 func (s *Server) routes() {
 	s.router.Handle("/cloud/infrastructure/create", s.WithSecretKeyValidation(s.handleCreateBackupInfrastructure()))
 }
-
-// Router creates a new servermux and registers all routes to it
-// func (s *Server) router() http.Handler {
-// 	r := http.NewServeMux()
-
-// 	wh := newWasabiHandler(s.S3Service, s.IAMService)
-
-// 	r.Handle("/cloud/infrastructure/create", wh.handleCreateBackupInfrastructure())
-
-// 	return r
-// }

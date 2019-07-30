@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -19,24 +18,21 @@ import (
 )
 
 func main() {
-	// Parse incoming requsts
-	// Log all requests and errors
-	// Get hashed query parameter and decrpyt it
 	port := flag.String("p", "8080", "Set the port the server will run on")
-	dir := flag.String("d", ".", "Set the directory where log files will be stored. Defaults to the current working directory")
+	// dir := flag.String("d", ".", "Set the directory where log files will be stored. Defaults to the current working directory")
 	flag.Parse()
 
 	// File to store logs
-	f, err := os.OpenFile(makePath(*dir), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// f, err := os.OpenFile(makePath(*dir), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
-	if err != nil {
-		log.Fatalf("FileOpenError: %v", err)
-	}
-	defer f.Close()
+	// if err != nil {
+	// 	log.Fatalf("FileOpenError: %v", err)
+	// }
+	// defer f.Close()
 
 	// log to stderr and file
-	mw := io.MultiWriter(os.Stderr, f)
-	log.SetOutput(mw)
+	// mw := io.MultiWriter(os.Stderr, f)
+	// log.SetOutput(mw)
 
 	// process env variables
 	if err := godotenv.Load(); err != nil {
