@@ -72,14 +72,14 @@ func (m *Mailer) OpenTLS() error {
 		ServerName:         m.host,
 	}
 
-	conn, err := tls.Dial("tcp", m.address, tlsconfig)
+	// conn, err := tls.Dial("tcp", m.address, tlsconfig)
 
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
-	// c, err := smtp.Dial(m.address)
-	c, err := smtp.NewClient(conn, m.host)
+	c, err := smtp.Dial(m.address)
+	// c, err := smtp.NewClient(conn, m.host)
 
 	if err != nil {
 		return err
@@ -93,9 +93,9 @@ func (m *Mailer) OpenTLS() error {
 		}
 	}
 
-	// if err := m.client.StartTLS(tlsconfig); err != nil {
-	// 	return err
-	// }
+	if err := m.client.StartTLS(tlsconfig); err != nil {
+		return err
+	}
 
 	return nil
 }

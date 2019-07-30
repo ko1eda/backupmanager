@@ -12,11 +12,12 @@ import (
 // Server represents an http server
 type Server struct {
 	listener   net.Listener
+	address    string
 	S3Service  *wasabi.S3Service
 	IAMService *wasabi.IAMService
 	Mailer     *smtp.Mailer
+	Validator  *Validator
 	router     *http.ServeMux
-	address    string
 	// Hasrer
 }
 
@@ -76,7 +77,7 @@ func (s *Server) Close() error {
 
 // routes maps all route handlers to their respoective paths
 func (s *Server) routes() {
-	s.router.Handle("/cloud/infrastructure/create", s.handleCreateBackupInfrastructure())
+	s.router.Handle("/cloud/infrastructure/create", s.WithSecretKeyValidation(s.handleCreateBackupInfrastructure()))
 }
 
 // Router creates a new servermux and registers all routes to it

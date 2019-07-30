@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -12,16 +11,15 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hostname := r.URL.Query().Get("host")
 		if hostname == "" {
-			// if there is no hostname parameter the req is malformed
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		err := s.Mailer.Send("koleda.christopher@gmail.com", "cd-backup-generator@securedatatransit.com", "Test Message")
+		// err := s.Mailer.Send("koleda.christopher@gmail.com", "cd-backup-generator@securedatatransit.com", "Test Message")
 
-		if err != nil {
-			log.Println("MailSendError: ", err)
-		}
+		// if err != nil {
+		// 	log.Println("MailSendError: ", err)
+		// }
 
 		// user, err := s.IAMService.CreateUser(hostname)
 		// if err != nil {
@@ -76,6 +74,6 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		// // by writing anything to the reponse body we do not
 		// // need a writeheader as go automatically adds 200
 		// str := fmt.Sprintf("%s,%s", *key.AccessKeyId, *key.SecretAccessKey)
-		// w.Write([]byte(str))
+		w.Write([]byte("hello"))
 	}
 }
