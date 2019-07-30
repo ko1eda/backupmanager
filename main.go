@@ -68,7 +68,7 @@ func main() {
 	})
 
 	// creates a mailer with credentials
-	mailer := smtp.NewMailer(os.Getenv("MAILER_ADDRESS"), smtp.WithCredentials(
+	mailer := smtp.NewMailer(os.Getenv("MAILER_ADDRESS"), os.Getenv("MAILER_FROM_ADDRESS"), smtp.WithCredentials(
 		os.Getenv("MAILER_USERNAME"),
 		os.Getenv("MAILER_PASSWORD"),
 	))

@@ -12,13 +12,16 @@ import (
 type Mailer struct {
 	auth    smtp.Auth
 	client  *smtp.Client
+	from    string
 	address string
 	host    string
 	port    string
 }
 
-// NewMailer returns a new mailer instance set to the given address
-func NewMailer(address string, opts ...func(*Mailer)) *Mailer {
+// NewMailer returns a new mailer instance set to the given valid server address
+// ex mail.mysite.com:25
+// from sets the default sender field for the mailer
+func NewMailer(address, from string, opts ...func(*Mailer)) *Mailer {
 	h, p, err := net.SplitHostPort(address)
 
 	if err != nil {
@@ -26,6 +29,7 @@ func NewMailer(address string, opts ...func(*Mailer)) *Mailer {
 	}
 
 	m := &Mailer{
+		from:    from,
 		address: address,
 		host:    h,
 		port:    p,
@@ -102,6 +106,7 @@ func (m *Mailer) Close() error {
 }
 
 // Send sends an email body to an address from an address
+// This will use the default mailer from address if no address is specified
 func (m *Mailer) Send(from, to, subject, body string) error {
 	if err := m.client.Mail(from); err != nil {
 		return err
@@ -119,11 +124,17 @@ func (m *Mailer) Send(from, to, subject, body string) error {
 
 	defer wc.Close()
 
-	msg := makeHeaders(map[string]string{
-		"From":    from,
+	headers := map[string]string{
+		"From":    m.from,
 		"To":      to,
 		"Subject": subject,
-	})
+	}
+
+	if from != "" {
+		headers["From"] = from
+	}
+
+	msg := makeHeaders(headers)
 
 	msg += "\r\n" + body
 

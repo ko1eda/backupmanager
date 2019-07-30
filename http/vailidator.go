@@ -14,5 +14,10 @@ func NewValidator(secret string) *Validator {
 // Validate compares the value of the secret key stored in the validator
 // with the passed in key and determines if they are equivalent
 func (v *Validator) Validate(key string) bool {
+	// if there is no secret set then we will always return false
+	if v.secret == "" {
+		return false
+	}
+
 	return v.secret == key
 }

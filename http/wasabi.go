@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -16,65 +17,104 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			return
 		}
 
-		err := s.Mailer.Send("cd-backup-generator@securedatatransit.com", "koleda.christopher@gmail.com", "Test Subject", "Test Message")
-
+		user, err := s.IAMService.CreateUser(hostname)
 		if err != nil {
-			log.Println("MailSendError: ", err)
+			log.Println("CreateUserError: ", err)
+
+			err := s.Mailer.Send(
+				"",
+				"support@creatingdigital.com",
+				"CreateUserError",
+				err.Error(),
+			)
+
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
+
+			w.WriteHeader(http.StatusFailedDependency)
+			return
 		}
 
-		// user, err := s.IAMService.CreateUser(hostname)
-		// if err != nil {
-		// 	log.Println("CreateUserError: ", err)
+		key, err := s.IAMService.CreateAccessKeyForUser(user)
+		if err != nil {
+			log.Println("CreateKeyError: ", err)
 
-		// 	// send email
+			err := s.Mailer.Send(
+				"",
+				"support@creatingdigital.com",
+				"CreateKeyError",
+				err.Error(),
+			)
 
-		// 	w.WriteHeader(http.StatusFailedDependency)
-		// 	return
-		// }
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
 
-		// key, err := s.IAMService.CreateAccessKeyForUser(user)
-		// if err != nil {
-		// 	log.Println("CreateKeyError: ", err)
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
 
-		// 	// send email
+		bucket, err := s.S3Service.CreateBucket(hostname)
+		if err != nil {
+			log.Println("CreateBucketError: ", err)
 
-		// 	w.WriteHeader(http.StatusFailedDependency)
-		// 	return
-		// }
+			err := s.Mailer.Send(
+				"",
+				"support@creatingdigital.com",
+				"CreateBucketError",
+				err.Error(),
+			)
 
-		// bucket, err := s.S3Service.CreateBucket(hostname)
-		// if err != nil {
-		// 	log.Println("CreateBucketError: ", err)
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
 
-		// 	//send email
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
 
-		// 	w.WriteHeader(http.StatusFailedDependency)
-		// 	return
-		// }
+		policy, err := s.IAMService.CreateLimitedAccessBucketPolicy(bucket)
+		if err != nil {
+			log.Println("CreatePolicyError: ", err)
 
-		// policy, err := s.IAMService.CreateLimitedAccessBucketPolicy(bucket)
-		// if err != nil {
-		// 	log.Println("CreatePolicyError: ", err)
+			err := s.Mailer.Send(
+				"",
+				"support@creatingdigital.com",
+				"CreatePolicyError",
+				err.Error(),
+			)
 
-		// 	// send email
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
 
-		// 	w.WriteHeader(http.StatusFailedDependency)
-		// 	return
-		// }
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
 
-		// err = s.IAMService.AttachPolicyToUser(policy, user)
-		// if err != nil {
-		// 	log.Println("AttachPolicyError: ", err)
+		err = s.IAMService.AttachPolicyToUser(policy, user)
+		if err != nil {
+			log.Println("AttachPolicyError: ", err)
 
-		// 	// send email
+			err := s.Mailer.Send(
+				"",
+				"support@creatingdigital.com",
+				"AttachPolicyError",
+				err.Error(),
+			)
 
-		// 	w.WriteHeader(http.StatusFailedDependency)
-		// 	return
-		// }
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
 
-		// // by writing anything to the reponse body we do not
-		// // need a writeheader as go automatically adds 200
-		// str := fmt.Sprintf("%s,%s", *key.AccessKeyId, *key.SecretAccessKey)
-		w.Write([]byte("hello"))
+			w.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+
+		// by writing anything to the reponse body we do not
+		// need a writeheader as go automatically adds 200
+		str := fmt.Sprintf("%s,%s", *key.AccessKeyId, *key.SecretAccessKey)
+		w.Write([]byte(str))
 	}
 }
