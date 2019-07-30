@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 )
 
@@ -15,11 +16,11 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			return
 		}
 
-		// err := s.Mailer.Send("koleda.christopher@gmail.com", "cd-backup-generator@securedatatransit.com", "Test Message")
+		err := s.Mailer.Send("cd-backup-generator@securedatatransit.com", "koleda.christopher@gmail.com", "Test Subject", "Test Message")
 
-		// if err != nil {
-		// 	log.Println("MailSendError: ", err)
-		// }
+		if err != nil {
+			log.Println("MailSendError: ", err)
+		}
 
 		// user, err := s.IAMService.CreateUser(hostname)
 		// if err != nil {

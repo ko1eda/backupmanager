@@ -2,6 +2,7 @@ package smtp
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 	"net/smtp"
@@ -72,14 +73,13 @@ func (m *Mailer) OpenTLS() error {
 		ServerName:         m.host,
 	}
 
-	// conn, err := tls.Dial("tcp", m.address, tlsconfig)
+	conn, err := tls.Dial("tcp", m.address, tlsconfig)
 
-	// if err != nil {
-	// 	return err
-	// }
+	if err != nil {
+		return err
+	}
 
-	c, err := smtp.Dial(m.address)
-	// c, err := smtp.NewClient(conn, m.host)
+	c, err := smtp.NewClient(conn, m.host)
 
 	if err != nil {
 		return err
@@ -93,10 +93,6 @@ func (m *Mailer) OpenTLS() error {
 		}
 	}
 
-	if err := m.client.StartTLS(tlsconfig); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -106,7 +102,7 @@ func (m *Mailer) Close() error {
 }
 
 // Send sends an email body to an address from an address
-func (m *Mailer) Send(to, from, body string) error {
+func (m *Mailer) Send(from, to, subject, body string) error {
 	if err := m.client.Mail(from); err != nil {
 		return err
 	}
@@ -123,9 +119,26 @@ func (m *Mailer) Send(to, from, body string) error {
 
 	defer wc.Close()
 
-	if _, err := wc.Write([]byte(body)); err != nil {
+	msg := makeHeaders(map[string]string{
+		"From":    from,
+		"To":      to,
+		"Subject": subject,
+	})
+
+	msg += "\r\n" + body
+
+	if _, err := wc.Write([]byte(msg)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// makeHeaders creates the email headers in the proper format
+func makeHeaders(headers map[string]string) string {
+	var res string
+	for k, v := range headers {
+		res += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	return res
 }

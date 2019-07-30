@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/joho/godotenv"
 	"github.com/ko1eda/backupmanager/http"
+	"github.com/ko1eda/backupmanager/smtp"
 	"github.com/ko1eda/backupmanager/wasabi"
 )
 
@@ -31,7 +32,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("FileOpenError: %v", err)
 	}
-
 	defer f.Close()
 
 	// log to stderr and file
@@ -68,24 +68,24 @@ func main() {
 	})
 
 	// creates a mailer with credentials
-	// mailer := smtp.NewMailer(os.Getenv("MAILER_ADDRESS"), smtp.WithCredentials(
-	// 	os.Getenv("MAILER_USERNAME"),
-	// 	os.Getenv("MAILER_PASSWORD"),
-	// ))
+	mailer := smtp.NewMailer(os.Getenv("MAILER_ADDRESS"), smtp.WithCredentials(
+		os.Getenv("MAILER_USERNAME"),
+		os.Getenv("MAILER_PASSWORD"),
+	))
 
-	// if err := mailer.OpenTLS(); err != nil {
-	// 	log.Fatal("MailServerConnectionError: ", err)
-	// }
+	if err := mailer.OpenTLS(); err != nil {
+		log.Fatal("MailServerConnectionError: ", err)
+	}
+	defer mailer.Close()
 
-	// defer mailer.Close()
-
+	// validator is used to validate the secret keys on incoming requests
 	validator := http.NewValidator(os.Getenv("REQUEST_SECRET_KEY"))
 
 	// set up the server with all dependencies
 	srvr := http.NewServer(http.WithAddress(*port))
 	srvr.IAMService = iamClient
 	srvr.S3Service = s3Client
-	// srvr.Mailer = mailer
+	srvr.Mailer = mailer
 	srvr.Validator = validator
 
 	srvr.Open()
