@@ -1,6 +1,9 @@
 package smtp
 
 import (
+	"crypto/tls"
+	"log"
+	"net"
 	"net/smtp"
 )
 
@@ -8,15 +11,23 @@ import (
 type Mailer struct {
 	auth    smtp.Auth
 	client  *smtp.Client
-	host    string
 	address string
+	host    string
+	port    string
 }
 
 // NewMailer returns a new mailer instance set to the given address
-func NewMailer(host string, opts ...func(*Mailer)) *Mailer {
+func NewMailer(address string, opts ...func(*Mailer)) *Mailer {
+	h, p, err := net.SplitHostPort(address)
+
+	if err != nil {
+		log.Fatal("HostPortStringSplitError: ", err)
+	}
+
 	m := &Mailer{
-		host:    host,
-		address: "25",
+		address: address,
+		host:    h,
+		port:    p,
 	}
 
 	for _, opt := range opts {
@@ -33,16 +44,9 @@ func WithCredentials(username, password string) func(*Mailer) {
 	}
 }
 
-// WithAddress adds a port to the mailserver request, default is 25
-func WithAddress(address string) func(*Mailer) {
-	return func(m *Mailer) {
-		m.address = address
-	}
-}
-
 // Open opens a connection to the mail server
 func (m *Mailer) Open() error {
-	c, err := smtp.Dial(m.host + ":" + m.address)
+	c, err := smtp.Dial(m.address)
 
 	if err != nil {
 		return err
@@ -61,9 +65,44 @@ func (m *Mailer) Open() error {
 	return nil
 }
 
+// OpenTLS opens the server using a tls connection
+func (m *Mailer) OpenTLS() error {
+	tlsconfig := &tls.Config{
+		InsecureSkipVerify: false,
+		ServerName:         m.host,
+	}
+
+	conn, err := tls.Dial("tcp", m.address, tlsconfig)
+
+	if err != nil {
+		return err
+	}
+
+	// c, err := smtp.Dial(m.address)
+	c, err := smtp.NewClient(conn, m.host)
+
+	if err != nil {
+		return err
+	}
+
+	m.client = c
+
+	if m.auth != nil {
+		if err := m.client.Auth(m.auth); err != nil {
+			return err
+		}
+	}
+
+	// if err := m.client.StartTLS(tlsconfig); err != nil {
+	// 	return err
+	// }
+
+	return nil
+}
+
 // Close closes an open smtp connection
 func (m *Mailer) Close() error {
-	return m.client.Close()
+	return m.client.Quit()
 }
 
 // Send sends an email body to an address from an address

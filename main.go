@@ -69,12 +69,12 @@ func main() {
 	})
 
 	// creates a mailer with credentials
-	mailer := smtp.NewMailer(os.Getenv("MAILER_HOSTNAME"), smtp.WithCredentials(
+	mailer := smtp.NewMailer(os.Getenv("MAILER_ADDRESS"), smtp.WithCredentials(
 		os.Getenv("MAILER_USERNAME"),
 		os.Getenv("MAILER_PASSWORD"),
 	))
 
-	if err := mailer.Open(); err != nil {
+	if err := mailer.OpenTLS(); err != nil {
 		log.Fatal("MailServerConnectionError: ", err)
 	}
 
