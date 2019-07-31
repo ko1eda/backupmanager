@@ -9,6 +9,14 @@ WASABI_SECRET_ACCESS_KEY=
 WASABI_S3_ENDPOINT=https://s3.wasabisys.com
 WASABI_IAM_ENDPOINT=https://iam.wasabisys.com
 WASABI_REGION="us-east-1"
+
+REQUEST_SECRET_KEY=""
+
+MAILER_ADDRESS=""
+MAILER_USERNAME=""
+MAILER_PASSWORD=""
+MAILER_FROM_ADDRESS=""
+
 ```
 3. run go build from the root directory of this project
 4. run the executable created from the go build command
