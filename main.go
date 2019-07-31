@@ -98,9 +98,9 @@ func main() {
 func makePath(dir string) string {
 	dir = filepath.Clean(dir)
 
-	if err := os.MkdirAll(filepath.Join(dir, "storage", "logs"), 0770); err != nil {
+	if err := os.MkdirAll(filepath.Join(dir, "logs"), 0770); err != nil {
 		log.Fatalf("CreateStorageDirError: %v", err)
 	}
 
-	return filepath.Join(dir, "storage", "logs", "application.log")
+	return filepath.Join(dir, "logs", "application.log")
 }
