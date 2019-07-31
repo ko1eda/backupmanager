@@ -19,6 +19,8 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 
 		user, err := s.IAMService.CreateUser(hostname)
 		if err != nil {
+			w.WriteHeader(http.StatusFailedDependency)
+
 			log.Println("CreateUserError: ", err)
 
 			err := s.Mailer.DialAndSend(
@@ -32,12 +34,13 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 				log.Println("MailSendError: ", err)
 			}
 
-			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 
 		key, err := s.IAMService.CreateAccessKeyForUser(user)
 		if err != nil {
+			w.WriteHeader(http.StatusFailedDependency)
+
 			log.Println("CreateKeyError: ", err)
 
 			err := s.Mailer.DialAndSend(
@@ -51,12 +54,13 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 				log.Println("MailSendError: ", err)
 			}
 
-			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 
 		bucket, err := s.S3Service.CreateBucket(hostname)
 		if err != nil {
+			w.WriteHeader(http.StatusFailedDependency)
+
 			log.Println("CreateBucketError: ", err)
 
 			err := s.Mailer.DialAndSend(
@@ -70,12 +74,13 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 				log.Println("MailSendError: ", err)
 			}
 
-			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 
 		policy, err := s.IAMService.CreateLimitedAccessBucketPolicy(bucket)
 		if err != nil {
+			w.WriteHeader(http.StatusFailedDependency)
+
 			log.Println("CreatePolicyError: ", err)
 
 			err := s.Mailer.DialAndSend(
@@ -89,12 +94,13 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 				log.Println("MailSendError: ", err)
 			}
 
-			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 
 		err = s.IAMService.AttachPolicyToUser(policy, user)
 		if err != nil {
+			w.WriteHeader(http.StatusFailedDependency)
+
 			log.Println("AttachPolicyError: ", err)
 
 			err := s.Mailer.DialAndSend(
@@ -108,7 +114,6 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 				log.Println("MailSendError: ", err)
 			}
 
-			w.WriteHeader(http.StatusFailedDependency)
 			return
 		}
 

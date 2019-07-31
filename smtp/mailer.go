@@ -13,7 +13,6 @@ import (
 // Mailer encapsulates the net/smtp mailer client
 type Mailer struct {
 	auth    smtp.Auth
-	client  *smtp.Client
 	from    string
 	address string
 	host    string
@@ -51,29 +50,25 @@ func WithCredentials(username, password string) func(*Mailer) {
 	}
 }
 
-// Open opens a connection to the mail server
-func (m *Mailer) Open() error {
-	c, err := smtp.Dial(m.address)
+// DialAndSend Dials a connection to the mail server, sends a message and then closes the connection
+func (m *Mailer) DialAndSend(from, to, subject, body string) error {
+	client, err := m.openTLS()
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "OpenTlsError: Could not open smtp client connection")
 	}
 
-	m.client = c
+	defer client.close()
 
-	if m.auth != nil {
-		err := m.client.Auth(m.auth)
-
-		if err != nil {
-			return err
-		}
+	if err := client.send(from, to, subject, body); err != nil {
+		return errors.Wrap(err, "DialAndSendError: Could not send email message")
 	}
 
 	return nil
 }
 
 // OpenTLS opens the server using a tls connection
-func (m *Mailer) OpenTLS() error {
+func (m *Mailer) openTLS() (*smtpClient, error) {
 	tlsconfig := &tls.Config{
 		InsecureSkipVerify: false,
 		ServerName:         m.host,
@@ -82,58 +77,42 @@ func (m *Mailer) OpenTLS() error {
 	conn, err := tls.Dial("tcp", m.address, tlsconfig)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c, err := smtp.NewClient(conn, m.host)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	m.client = c
-
 	if m.auth != nil {
-		if err := m.client.Auth(m.auth); err != nil {
-			return err
+		if err := c.Auth(m.auth); err != nil {
+			return nil, err
 		}
 	}
 
-	return nil
+	return &smtpClient{c, m}, nil
 }
 
-// DialAndSend Dials a connection to the mail server, sends a message and then closes the connection
-func (m *Mailer) DialAndSend(from, to, subject, body string) error {
-	if err := m.OpenTLS(); err != nil {
-		return errors.Wrap(err, "OpenTlsError: Could not open smtp client connection")
-	}
-
-	defer m.Close()
-
-	if err := m.Send(from, to, subject, body); err != nil {
-		return errors.Wrap(err, "DialAndSendError: Could not send email message")
-	}
-
-	return nil
-}
-
-// Close closes an open smtp connection
-func (m *Mailer) Close() error {
-	return m.client.Quit()
+// smtpClient wraps go's smtp client
+type smtpClient struct {
+	*smtp.Client
+	m *Mailer
 }
 
 // Send sends an email body to an address from an address
 // This will use the default mailer from address if no address is specified
-func (m *Mailer) Send(from, to, subject, body string) error {
-	if err := m.client.Mail(from); err != nil {
+func (c *smtpClient) send(from, to, subject, body string) error {
+	if err := c.Mail(from); err != nil {
 		return err
 	}
 
-	if err := m.client.Rcpt(to); err != nil {
+	if err := c.Rcpt(to); err != nil {
 		return err
 	}
 
-	wc, err := m.client.Data()
+	wc, err := c.Data()
 
 	if err != nil {
 		return err
@@ -142,7 +121,7 @@ func (m *Mailer) Send(from, to, subject, body string) error {
 	defer wc.Close()
 
 	headers := map[string]string{
-		"From":    m.from,
+		"From":    c.m.from,
 		"To":      to,
 		"Subject": subject,
 	}
@@ -160,6 +139,11 @@ func (m *Mailer) Send(from, to, subject, body string) error {
 	}
 
 	return nil
+}
+
+// Close closes an open smtp connection
+func (c *smtpClient) close() error {
+	return c.Quit()
 }
 
 // makeHeaders creates the email headers in the proper format
