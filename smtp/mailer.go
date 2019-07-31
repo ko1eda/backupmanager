@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"net/smtp"
+
+	"github.com/pkg/errors"
 )
 
 // Mailer encapsulates the net/smtp mailer client
@@ -95,6 +97,21 @@ func (m *Mailer) OpenTLS() error {
 		if err := m.client.Auth(m.auth); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// DialAndSend Dials a connection to the mail server, sends a message and then closes the connection
+func (m *Mailer) DialAndSend(from, to, subject, body string) error {
+	if err := m.OpenTLS(); err != nil {
+		return errors.Wrap(err, "OpenTlsError: Could not open smtp client connection")
+	}
+
+	defer m.Close()
+
+	if err := m.Send(from, to, subject, body); err != nil {
+		return errors.Wrap(err, "DialAndSendError: Could not send email message")
 	}
 
 	return nil

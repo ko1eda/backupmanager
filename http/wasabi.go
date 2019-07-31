@@ -21,7 +21,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		if err != nil {
 			log.Println("CreateUserError: ", err)
 
-			err := s.Mailer.Send(
+			err := s.Mailer.DialAndSend(
 				"",
 				"support@creatingdigital.com",
 				"CreateUserError",
@@ -40,7 +40,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		if err != nil {
 			log.Println("CreateKeyError: ", err)
 
-			err := s.Mailer.Send(
+			err := s.Mailer.DialAndSend(
 				"",
 				"support@creatingdigital.com",
 				"CreateKeyError",
@@ -59,7 +59,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		if err != nil {
 			log.Println("CreateBucketError: ", err)
 
-			err := s.Mailer.Send(
+			err := s.Mailer.DialAndSend(
 				"",
 				"support@creatingdigital.com",
 				"CreateBucketError",
@@ -78,7 +78,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		if err != nil {
 			log.Println("CreatePolicyError: ", err)
 
-			err := s.Mailer.Send(
+			err := s.Mailer.DialAndSend(
 				"",
 				"support@creatingdigital.com",
 				"CreatePolicyError",
@@ -97,7 +97,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 		if err != nil {
 			log.Println("AttachPolicyError: ", err)
 
-			err := s.Mailer.Send(
+			err := s.Mailer.DialAndSend(
 				"",
 				"support@creatingdigital.com",
 				"AttachPolicyError",

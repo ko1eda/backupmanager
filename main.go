@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 
@@ -70,11 +71,6 @@ func main() {
 		os.Getenv("MAILER_PASSWORD"),
 	))
 
-	if err := mailer.OpenTLS(); err != nil {
-		log.Fatal("MailServerConnectionError: ", err)
-	}
-	defer mailer.Close()
-
 	// validator is used to validate the secret keys on incoming requests
 	validator := http.NewValidator(os.Getenv("REQUEST_SECRET_KEY"))
 
@@ -90,7 +86,8 @@ func main() {
 
 	// we listen forever OR until we get a signal from the os to shut it down
 	c := make(chan os.Signal, 1)
-	signal.Notify(c)
+	// interupt syscall.SIGINT
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGQUIT)
 	<-c
 }
 

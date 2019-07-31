@@ -13,16 +13,16 @@ func (s *Server) secretKeyValidation(h http.HandlerFunc) http.HandlerFunc {
 		if s.Validator.Validate(secret) != true {
 			log.Println("InvalidSecretKeyRequest")
 
-			// err := s.Mailer.Send(
-			// 	"",
-			// 	"support@creatingdigital.com",
-			// 	"InvalidSecretKeyRequest",
-			// 	"Someone has tried to access go backup generator api without a valid secret key",
-			// )
+			err := s.Mailer.DialAndSend(
+				"",
+				"koleda.christopher@gmail.com",
+				"InvalidSecretKeyRequest",
+				"Someone has tried to access go backup generator api without a valid secret key.",
+			)
 
-			// if err != nil {
-			// 	log.Println("MailSendError: ", err)
-			// }
+			if err != nil {
+				log.Println("MailSendError: ", err)
+			}
 
 			w.WriteHeader(http.StatusBadRequest)
 			return
