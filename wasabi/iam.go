@@ -29,7 +29,7 @@ func (i *IAMService) CreateUser(name string) (*iam.User, error) {
 		return res.User, nil
 	}
 
-	res, err := i.iam.CreateUser(&iam.CreateUserInput{UserName: aws.String(name), Path: aws.String("/ops/")})
+	res, err := i.iam.CreateUser(&iam.CreateUserInput{UserName: aws.String(name)})
 
 	if err != nil {
 		// if there is any error other than entity already exists we have a problem
@@ -61,7 +61,7 @@ func (i *IAMService) CreateAccessKeyForUser(u *iam.User) (*iam.AccessKey, error)
 // All policies created through this application have a path prefix of /opts/
 func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) (*iam.Policy, error) {
 	// If the policy already exists return that
-	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String("/ops/")}); err == nil {
+	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String(bucket)}); err == nil {
 		for _, pol := range res.Policies {
 			if *pol.PolicyName == bucket+"-limited-access-policy" {
 				return pol, nil
@@ -117,7 +117,7 @@ func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) (*iam.Policy
 	res, err := i.iam.CreatePolicy(&iam.CreatePolicyInput{
 		PolicyDocument: aws.String(string(json)),
 		PolicyName:     aws.String(bucket + "-limited-access-policy"),
-		Path:           aws.String("/ops/"),
+		Path:           aws.String(bucket),
 	})
 
 	if err != nil {
