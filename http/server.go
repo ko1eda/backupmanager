@@ -76,5 +76,5 @@ func (s *Server) Close() error {
 
 // routes maps all route handlers to their respoective paths
 func (s *Server) routes() {
-	s.router.Handle("/cloud/infrastructure/create", s.WithSecretKeyValidation(s.handleCreateBackupInfrastructure()))
+	s.router.Handle("/cloud/infrastructure/create", s.secretKeyValidation(s.handleCreateBackupInfrastructure()))
 }
