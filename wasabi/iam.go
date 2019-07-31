@@ -60,8 +60,10 @@ func (i *IAMService) CreateAccessKeyForUser(u *iam.User) (*iam.AccessKey, error)
 // First we do a check to ensure that the policy exists, and if it does we return that.
 // All policies created through this application have a path prefix of /opts/
 func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) (*iam.Policy, error) {
+	prefix := "/" + bucket + "/"
+
 	// If the policy already exists return that
-	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String(bucket)}); err == nil {
+	if res, err := i.iam.ListPolicies(&iam.ListPoliciesInput{PathPrefix: aws.String(prefix)}); err == nil {
 		for _, pol := range res.Policies {
 			if *pol.PolicyName == bucket+"-limited-access-policy" {
 				return pol, nil
@@ -117,7 +119,7 @@ func (i *IAMService) CreateLimitedAccessBucketPolicy(bucket string) (*iam.Policy
 	res, err := i.iam.CreatePolicy(&iam.CreatePolicyInput{
 		PolicyDocument: aws.String(string(json)),
 		PolicyName:     aws.String(bucket + "-limited-access-policy"),
-		Path:           aws.String(bucket),
+		Path:           aws.String(prefix),
 	})
 
 	if err != nil {
