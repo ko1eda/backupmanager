@@ -26,7 +26,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			go func() {
 				err := s.Mailer.DialAndSend(
 					"",
-					"support@creatingdigital.com",
+					"test@test.com",
 					"CreateUserError",
 					err.Error(),
 				)
@@ -48,7 +48,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			go func() {
 				err := s.Mailer.DialAndSend(
 					"",
-					"support@creatingdigital.com",
+					"test@test.com",
 					"CreateKeyError",
 					err.Error(),
 				)
@@ -70,7 +70,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			go func() {
 				err := s.Mailer.DialAndSend(
 					"",
-					"support@creatingdigital.com",
+					"test@test.com",
 					"CreateBucketError",
 					err.Error(),
 				)
@@ -92,7 +92,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			go func() {
 				err := s.Mailer.DialAndSend(
 					"",
-					"support@creatingdigital.com",
+					"test@test.com",
 					"CreatePolicyError",
 					err.Error(),
 				)
@@ -114,7 +114,7 @@ func (s *Server) handleCreateBackupInfrastructure() http.HandlerFunc {
 			go func() {
 				err := s.Mailer.DialAndSend(
 					"",
-					"support@creatingdigital.com",
+					"test@test.com",
 					"AttachPolicyError",
 					err.Error(),
 				)

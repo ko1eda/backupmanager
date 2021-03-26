@@ -18,7 +18,7 @@ func (s *Server) secretKeyValidation(h http.HandlerFunc) http.HandlerFunc {
 			// go func() {
 			// 	err := s.Mailer.DialAndSend(
 			// 		"",
-			// 		"support@creatingdigital.com",
+			// 		"test@test.com",
 			// 		"InvalidSecretKeyRequest",
 			// 		"Someone has tried to access go backup generator api without a valid secret key.",
 			// 	)
